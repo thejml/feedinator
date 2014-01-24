@@ -1,159 +1,171 @@
-#!/bin/env node
-//  OpenShift sample Node application
-var express = require('express');
-var fs      = require('fs');
+//
+// Deploy/server.js - This is the heart of the server. Most all the work gets done in here.
+//
+var PORT = process.env.OPENSHIFT_NODEJS_PORT || 8080;
+var IPADDRESS = process.env.OPENSHIFT_NODEJS_IP || '127.0.0.1';
+var MONGOIP = process.env.OPENSHIFT_MONGODB_DB_HOST || '127.0.0.1';
+var MONGOPORT = process.env.OPENSHIFT_MONGODB_DB_PORT || 27017;
 
+var mongoose = require ("mongoose"); 
+var restify = require ("restify");
 
-/**
- *  Define the sample application.
- */
-var SampleApp = function() {
+// Schemas
+var feedSchema = new mongoose.Schema({
+	lastDispatch: { type: Number, min: 0 },
+    	lastUpdate: { type: Number, min: 0 },
+	lastUpdatedBy: { type: string, min: 0 },
+	lastSuccess: { type: Number },
+    	
+	title: { type: String, trim: true },
+    	url: { type: String, trim: true },
+    	feedid: { type: Number, min: 0 },
+	category: { type: Number, min: 0 },
+	type: { type: Number, min: 0 },    
+	image: { type: String, trim: true },    
+	timeOffset: { type: Number, min: 0},    
+	who: { type: Number, min: 0 },    
+	personal: { type: Number, min: 0 },    
+	dateAdded: { type: Number, min: 0 },    
+	environment: { type: String },
+});
 
-    //  Scope.
-    var self = this;
+// Get environment currently running under
+var env = "live";
+// create our configuration object by calling configure based on the environment desired.
+var config = require('./config.js').configure(env);
 
+var feeds = mongoose.model('Feeds', feedSchema);
 
-    /*  ================================================================  */
-    /*  Helper functions.                                                 */
-    /*  ================================================================  */
+function respond(req, res, next) {
+//	console.log(req.params);	
+	if (req.params.server === undefined) {
+	    return next(new restify.InvalidArgumentError('Server must be supplied'))
+  	}
+	var options = {upsert: true};
+//	var latest=deployment.aggregate([{ $group: {_id: { server: req.params.server }, mostRecent: { $max: "$datestamp"}}}]);
+// Do we have one in here already?
+	// Creating one user.
+	var incomingDeployment = {
+		release: req.params.release,
+		datestamp: Date.now(),
+		md5: req.params.md5,
+		location: req.params.location,
+  		codebase: req.params.codebase,
+		server: req.params.server,
+		success: 1,
+		environment: req.params.name
+	};
 
-    /**
-     *  Set up server IP address and port # using env variables/defaults.
-     */
-    self.setupVariables = function() {
-        //  Set the environment variables we need.
-        self.ipaddress = process.env.OPENSHIFT_NODEJS_IP;
-        self.port      = process.env.OPENSHIFT_NODEJS_PORT || 8080;
+	// Saving it to the database.
+	deployment.findOneAndUpdate({ server: req.params.server, release: req.params.release, codebase: req.params.codebase }, incomingDeployment, options, function (err) {
+		if (err) {console.log ('Error on save for '+req.params+" Error: "+err)} else {}
+	});
+  	res.send('OK');
+}
 
-        if (typeof self.ipaddress === "undefined") {
-            //  Log errors on OpenShift but continue w/ 127.0.0.1 - this
-            //  allows us to run/test the app locally.
-            console.warn('No OPENSHIFT_NODEJS_IP var, using 127.0.0.1');
-            self.ipaddress = "127.0.0.1";
-        };
-    };
+function findlatest(server) {
+	return deployment.aggregate({key: {"server":1},reduce: function (curr,result) {result.total++; if(curr.datestamp>result.datestamp) { result.datestamp=curr.datestamp;} },initial: {total:0, datestamp: 0} });
+}
 
+function listLatestPerServer(req, res, next) {
+//	console.log("Quering..."+req.params.name);
 
-    /**
-     *  Populate the cache.
-     */
-    self.populateCache = function() {
-        if (typeof self.zcache === "undefined") {
-            self.zcache = { 'index.html': '' };
-        }
+	deployment.find({ server: req.params.name }, null, { sort: { datestamp: -1 } },function(err, deploys) { res.send(deploys); });
+}
 
-        //  Local cache for static content.
-        self.zcache['index.html'] = fs.readFileSync('./index.html');
-    };
+/*function listEnvironments(req, res, next) { 
+	deployment.aggregate([{ $group: { _id: { environment: "$environment" } } } ], 
+		function(err, deploys) { res.send(deploys); });
+}
 
+function listServersPerEnvironment(req, res, next) {
+	deployment.aggregate([{ $group: { _id: { server: "$server"}, $find: { enviroment: req.params.name } } } ], 
+		function(err, deploys) { res.send(deploys); });
+}
 
-    /**
-     *  Retrieve entry (content) from cache.
-     *  @param {string} key  Key identifying content to retrieve from cache.
-     */
-    self.cache_get = function(key) { return self.zcache[key]; };
+function listLatestPerEnvironment(req, res, next) {
+//	console.log("Quering..."+req.params.name);
 
+	deployment.aggregate([{$match:{"environment":req.params.name}},{$sort:{"datestamp":-1}},{$group:{_id:{server:"$server",codebase:"$codebase"},release:{$first:"$release"},datestamp:{$first:"$datestamp"},location:{$first:"$location"},server:{$first:"$server"},codebase:{$first:"$codebase"}}}], 
+//	deployment.find({ environment: req.params.name }, null, { sort: { datestamp: -1, codebase: 1, location: 1, server: -1 }},
+//	deployment.aggregate({ environment: req.params.name}).group({ _id : "$server"}).exec(
+		function (err, deploys) {
+			deploys.forEach(function(deploy) {
+				var outgoingDeployment = {
+					release: deploy._id.release,
+					datestamp: deploy.datestamp,
+//					md5: req.params.md5,
+					location: deploy.location,
+  					codebase: deploy._id.codebase,
+					server: deploys.server,
+//					success: 1,
+					environment: deploys.environment
+				};
+//				res.send(deploy);
+			});
+			res.send(deploys);
+	});
+}
 
-    /**
-     *  terminator === the termination handler
-     *  Terminate server on receipt of the specified signal.
-     *  @param {string} sig  Signal to terminate on.
-     */
-    self.terminator = function(sig){
-        if (typeof sig === "string") {
-           console.log('%s: Received %s - terminating sample app ...',
-                       Date(Date.now()), sig);
-           process.exit(1);
-        }
-        console.log('%s: Node server stopped.', Date(Date.now()) );
-    };
-
-
-    /**
-     *  Setup termination handlers (for exit and a list of signals).
-     */
-    self.setupTerminationHandlers = function(){
-        //  Process on exit and signals.
-        process.on('exit', function() { self.terminator(); });
-
-        // Removed 'SIGPIPE' from the list - bugz 852598.
-        ['SIGHUP', 'SIGINT', 'SIGQUIT', 'SIGILL', 'SIGTRAP', 'SIGABRT',
-         'SIGBUS', 'SIGFPE', 'SIGUSR1', 'SIGSEGV', 'SIGUSR2', 'SIGTERM'
-        ].forEach(function(element, index, array) {
-            process.on(element, function() { self.terminator(element); });
-        });
-    };
-
-
-    /*  ================================================================  */
-    /*  App server functions (main app logic here).                       */
-    /*  ================================================================  */
-
-    /**
-     *  Create the routing table entries + handlers for the application.
-     */
-    self.createRoutes = function() {
-        self.routes = { };
-
-        self.routes['/asciimo'] = function(req, res) {
-            var link = "http://i.imgur.com/kmbjB.png";
-            res.send("<html><body><img src='" + link + "'></body></html>");
-        };
-
-        self.routes['/'] = function(req, res) {
-            res.setHeader('Content-Type', 'text/html');
-            res.send(self.cache_get('index.html') );
-        };
-    };
-
-
-    /**
-     *  Initialize the server (express) and create the routes and register
-     *  the handlers.
-     */
-    self.initializeServer = function() {
-        self.createRoutes();
-        self.app = express.createServer();
-
-        //  Add handlers for the app (from the routes).
-        for (var r in self.routes) {
-            self.app.get(r, self.routes[r]);
-        }
-    };
-
-
-    /**
-     *  Initializes the sample application.
-     */
-    self.initialize = function() {
-        self.setupVariables();
-        self.populateCache();
-        self.setupTerminationHandlers();
-
-        // Create the express server and routes.
-        self.initializeServer();
-    };
-
-
-    /**
-     *  Start the server (starts up the sample application).
-     */
-    self.start = function() {
-        //  Start the app on the specific interface (and port).
-        self.app.listen(self.port, self.ipaddress, function() {
-            console.log('%s: Node server started on %s:%d ...',
-                        Date(Date.now() ), self.ipaddress, self.port);
-        });
-    };
-
-};   /*  Sample Application.  */
+function listHistoryPerEnvironment(req, res, next) {
+	deployment.find({ environment: req.params.name }, null, { sort: { datestamp: -1, codebase: 1, location: 1, server: -1 }},function(err, deploys) { res.send(deploys); });
+//	deployment.aggregate([{ $group: { _id: { environment: req.params.name },  mostRecent: { $max: "$datestamp" } } } ], 
+//		function(err, deploys) { res.send(deploys); });
+}
 
 
 
-/**
- *  main():  Main code.
- */
-var zapp = new SampleApp();
-zapp.initialize();
-zapp.start();
+function listLatestForAll(req, res, next) {
+// This will group by server and release. It will have multiple server entries because each server will have multiple releases.
+	deployment.aggregate([{$project:{server: 1, release: 1, datestamp: 1}}, { $group: { _id: { server: "$server" },  mostRecent: { $max: "$datestamp" } } } ], 
+		function(err, deploys) { res.send(deploys); });
+}
 
+function pushRelease(req, res, next) {
+	console.log(req.params.tostring());
+	var options = {upsert: true};
+
+	var pushDeployment = {
+		release: req.params.release,
+		datestamp: Date.now(),
+		location: req.params.location,
+  		codebase: req.params.codebase,
+		environment: req.params.enviro
+	};
+
+	// Saving it to the database.
+	pushes.findOneAndUpdate({ release: req.params.release, codebase: req.params.codebase, location: req.params.location, environment: req.params.enviro }, pushDeployment, options, function (err) {
+		if (err) {console.log ('Error on save for '+req.params+' Error: '+err)} else { res.send('OK'); }
+	});
+}
+
+function getCurrent(req, res, next) {
+
+	pushes.find({ environment: req.params.enviro, location: req.params.location, codebase: req.params.codebase }, null, { sort: { datestamp: -1, codebase: 1, location: 1 }},function(err, deploys) { res.send(deploys); });
+}
+*/
+
+var server = restify.createServer();
+server.use(restify.bodyParser());
+server.get('/hello/:name',function(req, res, next) { res.send("Hey, "+req.params.name+". We're in the pipe, 5 by 5"); });
+
+// Here we find an appropriate database to connect to, defaulting to
+// localhost if we don't find one.
+var uristring = 'mongodb://feeduser:jiHU*gy'+MONGOIP+':'+MONGOPORT+'/deploy';
+
+// Makes connection asynchronously.  Mongoose will queue up database
+// operations and release them when the connection is complete.
+mongoose.connect(uristring, function (err, res) {
+  	if (err) {
+  		console.log ('ERROR connecting to: ' + uristring + '. ' + err);
+  	} else {
+  		console.log ('Succeeded connected to: ' + uristring);
+
+// Deployment Schema setup, Mongo connected, time to start listening
+
+		server.listen(PORT, IPADDRESS, function() {
+		  	console.log('%s listening at %s', server.name, server.url);
+		});
+
+	}
+});
