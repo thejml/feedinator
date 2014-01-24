@@ -13,7 +13,7 @@ var restify = require ("restify");
 var feedSchema = new mongoose.Schema({
 	lastDispatch: { type: Number, min: 0 },
     	lastUpdate: { type: Number, min: 0 },
-	lastUpdatedBy: { type: string, min: 0 },
+	lastUpdatedBy: { type: String, min: 0 },
 	lastSuccess: { type: Number },
     	
 	title: { type: String, trim: true },
@@ -31,8 +31,6 @@ var feedSchema = new mongoose.Schema({
 
 // Get environment currently running under
 var env = "live";
-// create our configuration object by calling configure based on the environment desired.
-var config = require('./config.js').configure(env);
 
 var feeds = mongoose.model('Feeds', feedSchema);
 
@@ -151,7 +149,7 @@ server.get('/hello/:name',function(req, res, next) { res.send("Hey, "+req.params
 
 // Here we find an appropriate database to connect to, defaulting to
 // localhost if we don't find one.
-var uristring = 'mongodb://feeduser:jiHU*gy'+MONGOIP+':'+MONGOPORT+'/deploy';
+var uristring = 'mongodb://inator:jiHU*gy@'+MONGOIP+':'+MONGOPORT+'/feedinator';
 
 // Makes connection asynchronously.  Mongoose will queue up database
 // operations and release them when the connection is complete.
