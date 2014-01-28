@@ -28,14 +28,13 @@ var feedSchema = new mongoose.Schema({
 	who: { type: Number, min: 0 },    
 	personal: { type: Number, min: 0 },    
 	dateAdded: { type: Number, min: 0 },    
-	environment: { type: String },
 });
 
 // Get environment currently running under
 var env = "live";
 
 var feeds = mongoose.model('Feeds', feedSchema);
-var history = mongoose.model('Feeds', feedHistorySchema);
+var history = mongoose.model('History', feedHistorySchema);
 
 function respond(req, res, next) {
 //	console.log(req.params);	
@@ -56,7 +55,6 @@ function respond(req, res, next) {
 		who: req.params.who,    
 		personal: req.params.personal,    
 		dateAdded: req.params.dateadded,    
-		environment: req.params.enviro,
 	};
 
 	// Saving it to the database.
@@ -88,7 +86,7 @@ function dispatch(req, res, next) {
 	});
 	var options = {upsert: true};
 
-	updateData {
+	var updateData = {
 		lastDispatch: Date.now(),
 	    	lastUpdate: Date.now(),
 		lastUpdatedBy: req.params.server,
@@ -174,9 +172,9 @@ var server = restify.createServer();
 server.use(restify.bodyParser());
 server.get('/hello/:name',function(req, res, next) { res.send("Hey, "+req.params.name+". We're in the pipe, 5 by 5"); });
 
-server.post('/feed/:feedid',response);
+server.post('/feed/:feedid',respond);
 server.get('/feed/:feedid',feedInfo);
-server.get('/dispatch/:server',feedDispatch);
+server.get('/dispatch/:server',dispatch);
 
 
 
