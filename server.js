@@ -10,12 +10,14 @@ var mongoose = require ("mongoose");
 var restify = require ("restify");
 
 // Schemas
-var feedSchema = new mongoose.Schema({
+var feedHistorySchema = new mongoose.Schema({
 	lastDispatch: { type: Number, min: 0 },
     	lastUpdate: { type: Number, min: 0 },
-	lastUpdatedBy: { type: String, min: 0 },
-	lastSuccess: { type: Number },
-    	
+	lastUpdatedBy: { type: String },
+	lastSuccess: { type: Number, min: 0 },
+});
+
+var feedSchema = new mongoose.Schema({
 	title: { type: String, trim: true },
     	url: { type: String, trim: true },
     	feedid: { type: Number, min: 0 },
@@ -36,33 +38,35 @@ var feeds = mongoose.model('Feeds', feedSchema);
 
 function respond(req, res, next) {
 //	console.log(req.params);	
-	if (req.params.server === undefined) {
+/*	if (req.params.server === undefined) {
 	    return next(new restify.InvalidArgumentError('Server must be supplied'))
-  	}
+  	}*/
 	var options = {upsert: true};
-//	var latest=deployment.aggregate([{ $group: {_id: { server: req.params.server }, mostRecent: { $max: "$datestamp"}}}]);
-// Do we have one in here already?
-	// Creating one user.
-	var incomingDeployment = {
-		release: req.params.release,
-		datestamp: Date.now(),
-		md5: req.params.md5,
-		location: req.params.location,
-  		codebase: req.params.codebase,
-		server: req.params.server,
-		success: 1,
-		environment: req.params.name
+
+	// Not sure if I have all this data or not for this call.
+	var feedData = {
+		title: req.params.title,
+    		url: req.params.url,
+    		feedid: req.params.feedid,
+		category: req.params.category,
+		type: req.params.type,    
+		image: req.params.image,    
+		timeOffset: req.params.offset,    
+		who: req.params.who,    
+		personal: req.params.personal,    
+		dateAdded: req.params.dateadded,    
+		environment: req.params.enviro,
 	};
 
 	// Saving it to the database.
-	deployment.findOneAndUpdate({ server: req.params.server, release: req.params.release, codebase: req.params.codebase }, incomingDeployment, options, function (err) {
+	deployment.findOneAndUpdate({ feedid: req.params.feedid, url: req.params.url }, feedData, options, function (err) {
 		if (err) {console.log ('Error on save for '+req.params+" Error: "+err)} else {}
 	});
   	res.send('OK');
 }
 
-function findlatest(server) {
-	return deployment.aggregate({key: {"server":1},reduce: function (curr,result) {result.total++; if(curr.datestamp>result.datestamp) { result.datestamp=curr.datestamp;} },initial: {total:0, datestamp: 0} });
+function findoldest(server) {
+	return deployment.aggregate({key: {"lastUpdate":-1},reduce: function (curr,result) {result.total++; if(curr.datestamp<result.datestamp) { result.datestamp=curr.datestamp;} }, initial: {datestamp: Date.now()} });
 }
 
 function listLatestPerServer(req, res, next) {
@@ -146,6 +150,10 @@ function getCurrent(req, res, next) {
 var server = restify.createServer();
 server.use(restify.bodyParser());
 server.get('/hello/:name',function(req, res, next) { res.send("Hey, "+req.params.name+". We're in the pipe, 5 by 5"); });
+
+server.post('/feed/:feedid');
+
+
 
 // Here we find an appropriate database to connect to, defaulting to
 // localhost if we don't find one.
