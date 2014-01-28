@@ -11,7 +11,7 @@ var restify = require ("restify");
 
 // Schemas
 var feedHistorySchema = new mongoose.Schema({
-	internalId: { type: String },
+	feedid: { type: String },
 	lastDispatch: { type: Number, min: 0 },
     	lastUpdate: { type: Number, min: 0 },
 	lastUpdatedBy: { type: String },
@@ -88,14 +88,14 @@ function dispatch(req, res, next) {
 			var options = {upsert: true};
 
 			var updateData = {
-				feedId: data.feedId,
+				feedid: data.feedid,
 				lastDispatch: Date.now(),
 			    	lastUpdate: Date.now(),
 				lastUpdatedBy: req.params.server,
 //				lastSuccess: { type: Number, min: 0 },
 			};
-
-			history.findOneAndUpdate({ feedid: data.feedId }, updateData, options, function (err) { if (err) { res.send(err); } });
+			res.send(data);
+			history.findOneAndUpdate({ feedid: data.feedid }, updateData, options, function (err) { if (err) { res.send(err); } });
 		}
 	});
 }
