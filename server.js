@@ -35,6 +35,7 @@ var feedSchema = new mongoose.Schema({
 var env = "live";
 
 var feeds = mongoose.model('Feeds', feedSchema);
+var history = mongoose.model('Feeds', feedHistorySchema);
 
 function respond(req, res, next) {
 //	console.log(req.params);	
@@ -59,7 +60,7 @@ function respond(req, res, next) {
 	};
 
 	// Saving it to the database.
-	deployment.findOneAndUpdate({ feedid: req.params.feedid, url: req.params.url }, feedData, options, function (err) {
+	feeds.findOneAndUpdate({ feedid: req.params.feedid, url: req.params.url }, feedData, options, function (err) {
 		if (err) {console.log ('Error on save for '+req.params+" Error: "+err)} else {}
 	});
   	res.send('OK');
@@ -71,8 +72,30 @@ function findoldest(server) {
 
 function listLatestPerServer(req, res, next) {
 //	console.log("Quering..."+req.params.name);
-
 	deployment.find({ server: req.params.name }, null, { sort: { datestamp: -1 } },function(err, deploys) { res.send(deploys); });
+}
+
+function feedInfo(req, res, next) {
+	feeds.findOne({ feedid: req.params.feedid }, function(err,data) {
+		if (err) { res.send(err); } else { res.send(data) }
+	});
+}
+
+function dispatch(req, res, next) {
+	//This can't have feedid come in as the server doesn't know what ID it'll get
+	feeds.findOne({ feedid: req.params.feedid }, function(err,data) {
+		if (err) { res.send(err); } else { res.send(data) }
+	});
+	var options = {upsert: true};
+
+	updateData {
+		lastDispatch: Date.now(),
+	    	lastUpdate: Date.now(),
+		lastUpdatedBy: req.params.server,
+//		lastSuccess: { type: Number, min: 0 },
+	};
+
+	feedHistory.findOneAndUpdate({ feedid: req.params.feedid }, updateData, options, function (err) { if (err) { res.send(err); } });
 }
 
 /*function listEnvironments(req, res, next) { 
@@ -151,7 +174,9 @@ var server = restify.createServer();
 server.use(restify.bodyParser());
 server.get('/hello/:name',function(req, res, next) { res.send("Hey, "+req.params.name+". We're in the pipe, 5 by 5"); });
 
-server.post('/feed/:feedid');
+server.post('/feed/:feedid',response);
+server.get('/feed/:feedid',feedInfo);
+server.get('/dispatch/:server',feedDispatch);
 
 
 
