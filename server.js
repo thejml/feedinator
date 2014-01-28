@@ -11,7 +11,7 @@ var restify = require ("restify");
 
 // Schemas
 var feedHistorySchema = new mongoose.Schema({
-	internalId: { type: ObjectId,turnOn: false },
+	internalId: { type: String },
 	lastDispatch: { type: Number, min: 0 },
     	lastUpdate: { type: Number, min: 0 },
 	lastUpdatedBy: { type: String },
@@ -19,7 +19,7 @@ var feedHistorySchema = new mongoose.Schema({
 });
 
 var feedSchema = new mongoose.Schema({
-	internalID: { type: ObjectId, turnOn: true },
+	internalID: { type: String },
 	title: { type: String, trim: true },
     	url: { type: String, trim: true },
     	feedid: { type: Number, min: 0 },
@@ -84,19 +84,20 @@ function feedInfo(req, res, next) {
 function dispatch(req, res, next) {
 	//This can't have feedid come in as the server doesn't know what ID it'll get
 	feeds.findOne({ feedid: req.params.feedid }, null, { sort: { lastUpdate: -1 } }, function(err,data) {
-		if (err) { res.send(err); } else { res.send(data) }
+		if (err) { res.send(err); } else { 
+			var options = {upsert: true};
+
+			var updateData = {
+				feedId: data.feedId,
+				lastDispatch: Date.now(),
+			    	lastUpdate: Date.now(),
+				lastUpdatedBy: req.params.server,
+//				lastSuccess: { type: Number, min: 0 },
+			};
+
+			history.findOneAndUpdate({ feedid: data.feedId }, updateData, options, function (err) { if (err) { res.send(err); } });
+		}
 	});
-	var options = {upsert: true};
-
-	var updateData = {
-		feedId: feedid,
-		lastDispatch: Date.now(),
-	    	lastUpdate: Date.now(),
-		lastUpdatedBy: req.params.server,
-//		lastSuccess: { type: Number, min: 0 },
-	};
-
-	history.findOneAndUpdate({ feedid: req.params.feedid }, updateData, options, function (err) { if (err) { res.send(err); } });
 }
 
 
