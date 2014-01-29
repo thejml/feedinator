@@ -83,7 +83,7 @@ function feedInfo(req, res, next) {
 
 function dispatch(req, res, next) {
 	//This can't have feedid come in as the server doesn't know what ID it'll get
-	feeds.findOne({ feedid: req.params.feedid }, null, { sort: { lastUpdate: -1 } }, function(err,data) {
+	feeds.find({ feedid: req.params.feedid }, null, { sort: { lastUpdate: -1 }, limit: 1 }, function(err,data) {
 		if (err) { res.send(err); } else { 
 			var options = {upsert: true};
 
