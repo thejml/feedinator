@@ -86,7 +86,7 @@ function dispatch(req, res, next) {
 	feeds.find({ feedid: req.params.feedid }, null, { sort: { lastUpdate: -1 }, limit: 1 }, function(err,data) {
 		if (err) { res.send(err); } else { 
 			var options = {upsert: true};
-
+			console.log(data);
 			var updateData = {
 				feedid: data.feedid,
 				lastDispatch: Date.now(),
