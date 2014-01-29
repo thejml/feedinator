@@ -32,11 +32,27 @@ var feedSchema = new mongoose.Schema({
 	dateAdded: { type: Number, min: 0 },    
 });
 
+var feedData = new mongoose.Schema({
+	feedid: { type: String },
+    	title: { type: String },
+    	url: { type: String },
+    	image: { type: String },
+    	pubdateseconds: { type: Number, min: 0 },
+    	timeaggregated: { type: Number, min: 0 },
+    	title: { type: String },
+    	description: { type: String },
+    	guid: { type: String },
+    	uuid: { type: String },
+    	author: { type: String },
+	category: { type: Number },
+});
+
 // Get environment currently running under
 var env = "live";
 
 var feeds = mongoose.model('Feeds', feedSchema);
 var history = mongoose.model('History', feedHistorySchema);
+var feedData = mongoose.model('History', feedDataSchema);
 
 function respond(req, res, next) {
 	console.log(req.params);	
@@ -83,7 +99,7 @@ function feedInfo(req, res, next) {
 
 function dispatch(req, res, next) {
 	//This can't have feedid come in as the server doesn't know what ID it'll get
-	feeds.findOne({ feedid: req.params.feedid }, function(err,data) { //, null, { sort: { lastUpdate: -1 } }, function(err,data) {
+	feeds.findOne({ }, null, function(err,data) { //, null, { sort: { lastUpdate: -1 } }, function(err,data) {
 		if (err) { res.send(err); } else { 
 			var options = {upsert: true};
 			console.log(data);
