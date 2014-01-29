@@ -97,6 +97,9 @@ function feedInfo(req, res, next) {
 	});
 }
 
+// We need to rewrite dispatch so that it looks at the updateData instead of at the feed listings. 
+// The catch with this is that a new updateData record won't be created because one doesn't exist... so we need to create them,
+// or we need to store the last update time and last dispatch time in the feeds table in the first place. 
 function dispatch(req, res, next) {
 	//This can't have feedid come in as the server doesn't know what ID it'll get
 	feeds.findOne({ }, null, function(err,data) { //, null, { sort: { lastUpdate: -1 } }, function(err,data) {
