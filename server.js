@@ -57,7 +57,7 @@ var env = "live";
 
 var feeds = mongoose.model('Feeds', feedSchema);
 var history = mongoose.model('History', feedHistorySchema);
-var feedData = mongoose.model('History', feedDataSchema);
+var feedData = mongoose.model('FeedData', feedDataSchema);
 
 function respond(req, res, next) {
 	console.log(req.params);	
@@ -118,7 +118,7 @@ function dispatch(req, res, next) {
 //				lastSuccess: { type: Number, min: 0 },
 			};
 			res.send(data);
-			history.findOneAndUpdate({ feedid: data.feedid }, updateData, options, function (err) { if (err) { res.send(err); } });
+			feeds.findOneAndUpdate({ feedid: data.feedid }, updateData, options, function (err) { if (err) { res.send(err); } });
 		}
 	});
 }
