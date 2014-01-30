@@ -30,6 +30,11 @@ var feedSchema = new mongoose.Schema({
 	who: { type: Number, min: 0 },    
 	personal: { type: Number, min: 0 },    
 	dateAdded: { type: Number, min: 0 },    
+
+	lastDispatch: { type: Number, min: 0 },
+    	lastUpdate: { type: Number, min: 0 },
+	lastUpdatedBy: { type: String },
+	lastSuccess: { type: Number, min: 0 },
 });
 
 var feedData = new mongoose.Schema({
@@ -102,12 +107,11 @@ function feedInfo(req, res, next) {
 // or we need to store the last update time and last dispatch time in the feeds table in the first place. 
 function dispatch(req, res, next) {
 	//This can't have feedid come in as the server doesn't know what ID it'll get
-	feeds.findOne({ }, null, function(err,data) { //, null, { sort: { lastUpdate: -1 } }, function(err,data) {
+	feeds.findOne({ }, null, { sort: { lastDispatch: -1 } }, function(err,data) { //, null, { sort: { lastUpdate: -1 } }, function(err,data) {
 		if (err) { res.send(err); } else { 
 			var options = {upsert: true};
 			console.log(data);
 			var updateData = {
-				feedid: data.feedid,
 				lastDispatch: Date.now(),
 			    	lastUpdate: Date.now(),
 				lastUpdatedBy: req.params.server,
