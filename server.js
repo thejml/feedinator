@@ -37,7 +37,7 @@ var feedSchema = new mongoose.Schema({
 	lastSuccess: { type: Number, min: 0 },
 });
 
-var feedData = new mongoose.Schema({
+var feedDataSchema = new mongoose.Schema({
 	feedid: { type: String },
     	title: { type: String },
     	url: { type: String },
