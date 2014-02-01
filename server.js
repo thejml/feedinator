@@ -107,8 +107,10 @@ function feedInfo(req, res, next) {
 // or we need to store the last update time and last dispatch time in the feeds table in the first place. 
 function dispatch(req, res, next) {
 	feeds.findOne({ "lastDispatch" : { "$exists" : false } },function(err,data) {
-		data.lastDispatch=0;
-		data.save(function (err) { if (err) { res.send(err); } });	
+		if (data!=null) {
+			data.lastDispatch=0;
+			data.save(function (err) { if (err) { res.send(err); } });
+		}	
 	});
 
 	//This can't have feedid come in as the server doesn't know what ID it'll get
