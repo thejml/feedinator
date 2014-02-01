@@ -123,7 +123,7 @@ function dispatch(req, res, next) {
 			var lasttwelve= Date.now()-(3600*12*1000000);
 			feedData.find({ feedid: data.feedid }, { uuid: 1 }, { timeaggregated: { $gt: lasttwelve } }, function (err,udata) {
 				data.uuids=udata;
-			}
+			});
 			res.send(data);
 			feeds.findOneAndUpdate({ feedid: data.feedid }, updateData, options, function (err) { if (err) { res.send(err); } });
 		}
