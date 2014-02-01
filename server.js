@@ -49,7 +49,7 @@ var feedDataSchema = new mongoose.Schema({
     	guid: { type: String },
     	uuid: { type: String },
     	author: { type: String },
-	category: { type: Number },
+	category: { type: String },
 });
 
 // Get environment currently running under
@@ -116,7 +116,7 @@ function dispatch(req, res, next) {
 			console.log(data);
 			var updateData = {
 				lastDispatch: Date.now(),
-			    	lastUpdate: Date.now(),
+//			    	lastUpdate: Date.now(),
 				lastUpdatedBy: req.params.server,
 //				lastSuccess: { type: Number, min: 0 },
 			};
@@ -152,9 +152,16 @@ function addStoryData(req, res, next) {
 	};
 
 	// Saving it to the database.
-	feedData.findOneAndUpdate({ feedid: req.params.feedid, uuid: req.params.uuid }, storyData, options, function (err) {
+	feedData.findOneAndUpdate({ feedid: req.params.feedid, uuid: req.params.uuid }, storyData, options, function (err,data) {
 		if (err) {console.log ('Error on save for '+req.params+" Error: "+err)} else {
-  			res.send('OK');
+			var updateData = {
+			    	lastUpdate: Date.now(),
+				lastSuccess: Date.now(),
+			};
+			res.send(data);
+			feeds.findOneAndUpdate({ feedid: data.feedid }, updateData, options, function (err) { if (err) { res.send(err); } });
+	
+			res.send('OK');
 		}
 	});
 }
