@@ -74,7 +74,7 @@ function respond(req, res, next) {
 		category: req.params.category,
 		type: req.params.type,    
 		image: req.params.image,    
-		timeOffset: req.params.offset,    
+		timeOffset: req.params.timeOffset,    
 		who: req.params.who,    
 		personal: req.params.personal,    
 		dateAdded: req.params.dateAdded,    
@@ -90,11 +90,6 @@ function respond(req, res, next) {
 
 function findoldest(server) {
 	return deployment.aggregate({key: {"lastUpdate":-1},reduce: function (curr,result) {result.total++; if(curr.datestamp<result.datestamp) { result.datestamp=curr.datestamp;} }, initial: {datestamp: Date.now()} });
-}
-
-function listLatestPerServer(req, res, next) {
-//	console.log("Quering..."+req.params.name);
-	deployment.find({ server: req.params.name }, null, { sort: { datestamp: -1 } },function(err, deploys) { res.send(deploys); });
 }
 
 function feedInfo(req, res, next) {
@@ -131,6 +126,40 @@ function dispatch(req, res, next) {
 	});
 }
 
+function getStoryData(req, res, next) { 
+		feedData.findOne({ uuid: req.params.uuid }, function (err,data) { if (err) { res.send(err); } else { res.send(data); } });
+}
+
+function addStoryData(req, res, next) {
+	console.log(req.params);	
+/*	if (req.params.server === undefined) {
+	    return next(new restify.InvalidArgumentError('Server must be supplied'))
+  	}*/
+	var options = {upsert: true};
+
+	var storyData = {
+    		feedid: req.params.feedid,
+		title: req.params.title,
+    		url: req.params.url,
+		image: req.params.image,    
+		pubdateseconds: req.params.pubdateseconds,    
+		timeaggregated: req.params.timeaggregated,    
+		category: req.params.category,
+		description: req.params.description,
+		author: req.params.author,
+		uuid: req.params.uuid,    
+		guid: req.params.guid,    
+	};
+
+	// Saving it to the database.
+	feedData.findOneAndUpdate({ feedid: req.params.feedid, uuid: req.params.uuid }, storyData, options, function (err) {
+		if (err) {console.log ('Error on save for '+req.params+" Error: "+err)} else {
+  			res.send('OK');
+		}
+	});
+}
+
+
 
 var server = restify.createServer();
 server.use(restify.bodyParser());
@@ -138,6 +167,8 @@ server.get('/hello/:name',function(req, res, next) { res.send("Hey, "+req.params
 
 server.post('/feed/:feedid',respond);
 server.get('/feed/:feedid',feedInfo);
+server.post('/story/:uuid',addStoryData);
+server.get('/story/:uuid',getStoryData);
 server.get('/dispatch/:server',dispatch);
 
 // Here we find an appropriate database to connect to, defaulting to
