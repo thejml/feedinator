@@ -77,7 +77,7 @@ function respond(req, res, next) {
 		timeOffset: req.params.offset,    
 		who: req.params.who,    
 		personal: req.params.personal,    
-		dateAdded: req.params.dateadded,    
+		dateAdded: req.params.dateAdded,    
 	};
 
 	// Saving it to the database.
