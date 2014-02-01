@@ -122,6 +122,7 @@ function dispatch(req, res, next) {
 			};
 			var lasttwelve= Date.now()-(3600*12*1000000);
 			feedData.find({ feedid: data.feedid }, { uuid: 1 }, { timeaggregated: { $gt: lasttwelve } }, function (err,udata) {
+				console.log(udata);
 				data.uuids=udata;
 			});
 			res.send(data);
