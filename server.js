@@ -82,9 +82,10 @@ function respond(req, res, next) {
 
 	// Saving it to the database.
 	feeds.findOneAndUpdate({ feedid: req.params.feedid, url: req.params.url }, feedData, options, function (err) {
-		if (err) {console.log ('Error on save for '+req.params+" Error: "+err)} else {}
+		if (err) {console.log ('Error on save for '+req.params+" Error: "+err)} else {
+  			res.send('OK');
+		}
 	});
-  	res.send('OK');
 }
 
 function findoldest(server) {
