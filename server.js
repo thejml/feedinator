@@ -106,8 +106,13 @@ function feedInfo(req, res, next) {
 // The catch with this is that a new updateData record won't be created because one doesn't exist... so we need to create them,
 // or we need to store the last update time and last dispatch time in the feeds table in the first place. 
 function dispatch(req, res, next) {
+	feeds.findOne({ "lastDispatch" : { "$exists" : false } },function(err,data) {
+		data.lastDispatch=0;
+		data.save(function (err) { if (err) { res.send(err); } });	
+	});
+
 	//This can't have feedid come in as the server doesn't know what ID it'll get
-	feeds.findOne({ }, null, { sort: { lastDispatch: -1 } }, function(err,data) { //, null, { sort: { lastUpdate: -1 } }, function(err,data) {
+	feeds.findOne({ }, null, { sort: { lastDispatch: 1 } }, function(err,data) { //, null, { sort: { lastUpdate: -1 } }, function(err,data) {
 		if (err) { res.send(err); } else { 
 			var options = {upsert: true};
 			console.log(data);
