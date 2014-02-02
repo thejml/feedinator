@@ -121,7 +121,7 @@ function dispatch(req, res, next) {
 			};
 			var lasttwelve=Date.now()-43200000000;
 			console.log(lasttwelve);
-			feedData.find({ timeaggregated: { $gt: lasttwelve } }, { uuid: 1 }, function (err,udata) {
+			feedData.find({ timeaggregated: { $gt: lasttwelve }, feedid: data.feedid }, { uuid: 1 }, function (err,udata) {
 				console.log(udata);
 				var d = { 
 					uuids: udata,
