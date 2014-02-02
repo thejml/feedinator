@@ -187,6 +187,10 @@ function addStoryData(req, res, next) {
 	});
 }
 
+function findURL(req, res, next) {
+	feedData.findOne({ uuid: req.params.uuid }, { url: 1}, function (err,data) { 
+		if (err) { console.log('Error Looking Up uuid: '+req.params.uuid); } else { res.send(data); } });
+}
 
 
 var server = restify.createServer();
@@ -202,6 +206,7 @@ server.get('/dispatch/:server',dispatch);
 server.get('/feedlist/',feedList);
 server.get('/feedlatest/:feedid',feedInfo);
 server.get('/current/',currentStories);
+server.get('/short/:uuid',findURL);
 
 // Here we find an appropriate database to connect to, defaulting to
 // localhost if we don't find one.
