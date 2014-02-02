@@ -60,7 +60,7 @@ var history = mongoose.model('History', feedHistorySchema);
 var feedData = mongoose.model('FeedData', feedDataSchema);
 
 function respond(req, res, next) {
-	console.log(req.params);	
+	//console.log(req.params);	
 /*	if (req.params.server === undefined) {
 	    return next(new restify.InvalidArgumentError('Server must be supplied'))
   	}*/
@@ -120,9 +120,9 @@ function dispatch(req, res, next) {
 //				lastSuccess: { type: Number, min: 0 },
 			};
 			var lasttwelve=Date.now()-43200000000;
-			console.log(lasttwelve);
+			//console.log(lasttwelve);
 			feedData.find({ timeaggregated: { $gt: lasttwelve }, feedid: data.feedid }, { uuid: 1 }, function (err,udata) {
-				console.log(udata);
+				//console.log(udata);
 				var d = { 
 					uuids: udata,
 					info: data,
@@ -139,7 +139,7 @@ function getStoryData(req, res, next) {
 }
 
 function addStoryData(req, res, next) {
-	console.log(req.params);	
+	//console.log(req.params);	
 /*	if (req.params.server === undefined) {
 	    return next(new restify.InvalidArgumentError('Server must be supplied'))
   	}*/
