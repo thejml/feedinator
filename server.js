@@ -92,8 +92,15 @@ function findoldest(server) {
 	return deployment.aggregate({key: {"lastUpdate":-1},reduce: function (curr,result) {result.total++; if(curr.datestamp<result.datestamp) { result.datestamp=curr.datestamp;} }, initial: {datestamp: Date.now()} });
 }
 
+function feedList(req, res, next) {
+	feeds.find({},{feedid: 1, title: 1},function(err,data) {
+		if (err) { res.send(err); } else { res.send(data); } 
+	});
+}
+
 function feedInfo(req, res, next) {
-	feeds.findOne({ feedid: req.params.feedid }, function(err,data) {
+	var lasttwelve=Date.now()-43200000000;
+	feeds.findOne({ timeaggregated: { $gt: lasttwelve }, feedid: req.params.feedid }, function(err,data) {
 		if (err) { res.send(err); } else { res.send(data) }
 	});
 }
@@ -185,6 +192,9 @@ server.get('/feed/:feedid',feedInfo);
 server.post('/story/:uuid',addStoryData);
 server.get('/story/:uuid',getStoryData);
 server.get('/dispatch/:server',dispatch);
+
+server.get('/feedlist/',feedList);
+server.get('/feedlatest/:feedid',feedInfo);
 
 // Here we find an appropriate database to connect to, defaulting to
 // localhost if we don't find one.
