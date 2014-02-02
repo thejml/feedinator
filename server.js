@@ -113,7 +113,6 @@ function dispatch(req, res, next) {
 	feeds.findOne({ }, null, { sort: { lastDispatch: 1 } }, function(err,data) { //, null, { sort: { lastUpdate: -1 } }, function(err,data) {
 		if (err) { res.send(err); } else { 
 			var options = {upsert: true};
-			console.log(data);
 			var updateData = {
 				lastDispatch: Date.now(),
 //			    	lastUpdate: Date.now(),
@@ -124,8 +123,11 @@ function dispatch(req, res, next) {
 			console.log(lasttwelve);
 			feedData.find({ timeaggregated: { $gt: lasttwelve } }, { uuid: 1 }, function (err,udata) {
 				console.log(udata);
-				data.uuids=udata;
-				res.send(data);
+				var d = { 
+					uuids: udata,
+					info: data,
+				};
+				res.send(d);
      			});
 			feeds.findOneAndUpdate({ feedid: data.feedid }, updateData, options, function (err) { if (err) { res.send(err); } });
 		}
