@@ -105,6 +105,12 @@ function feedInfo(req, res, next) {
 	});
 }
 
+function currentStories(req, res, next) {
+	var lasttwelve=Date.now()-43200000000;
+	feeds.find({ timeaggregated: { $gt: lasttwelve } }, null, function(err,data) {
+		if (err) { res.send(err); } else { res.send(data) }
+	});
+}
 // We need to rewrite dispatch so that it looks at the updateData instead of at the feed listings. 
 // The catch with this is that a new updateData record won't be created because one doesn't exist... so we need to create them,
 // or we need to store the last update time and last dispatch time in the feeds table in the first place. 
@@ -195,6 +201,7 @@ server.get('/dispatch/:server',dispatch);
 
 server.get('/feedlist/',feedList);
 server.get('/feedlatest/:feedid',feedInfo);
+server.get('/current/',currentStories);
 
 // Here we find an appropriate database to connect to, defaulting to
 // localhost if we don't find one.
