@@ -120,12 +120,13 @@ function dispatch(req, res, next) {
 				lastUpdatedBy: req.params.server,
 //				lastSuccess: { type: Number, min: 0 },
 			};
-			var lasttwelve= Date.now()-(3600*12*1000000);
-			feedData.find({ feedid: data.feedid }, { uuid: 1 }, { timeaggregated: { $gt: lasttwelve } }, function (err,udata) {
+			var lasttwelve=Date.now()-43200000000;
+			console.log(lasttwelve);
+			feedData.find({ timeaggregated: { $gt: lasttwelve } }, { uuid: 1 }, function (err,udata) {
 				console.log(udata);
 				data.uuids=udata;
-			});
-			res.send(data);
+				res.send(data);
+     			});
 			feeds.findOneAndUpdate({ feedid: data.feedid }, updateData, options, function (err) { if (err) { res.send(err); } });
 		}
 	});
