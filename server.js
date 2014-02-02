@@ -107,7 +107,7 @@ function feedInfo(req, res, next) {
 
 function currentStories(req, res, next) {
 	var lasttwelve=Date.now()-43200000000;
-	feedData.find({ timeaggregated: { $gt: lasttwelve } }, { feedid:1, image:1, category:1, title: 1, uuid:1, pubdateseconds: 1}, { sort: { timeaggregated: -1},function(err,data) {
+	feedData.find({ timeaggregated: { $gt: lasttwelve } }, { feedid:1, image:1, category:1, title: 1, uuid:1, pubdateseconds: 1}, { sort: { timeaggregated: -1}},function(err,data) {
 		if (err) { res.send(err); } else { res.send(data) }
 	});
 }
