@@ -100,7 +100,7 @@ function feedList(req, res, next) {
 
 function feedInfo(req, res, next) {
 	var lasttwelve=Date.now()-43200000000;
-	feeds.findOne({ timeaggregated: { $gt: lasttwelve }, feedid: req.params.feedid }, function(err,data) {
+	feeds.find({ timeaggregated: { $gt: lasttwelve }, feedid: req.params.feedid }, null, function(err,data) {
 		if (err) { res.send(err); } else { res.send(data) }
 	});
 }
