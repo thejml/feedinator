@@ -212,7 +212,7 @@ function addFeedSubscription(req, res, next) {
 }
 
 function getFeedSubscriptions(req, res, next) {
-	feedSubs.find({},null,function (err,data) { if (err) { res.send(err); } else { res.send(data); });	
+	feedSubs.find({},null,function (err,data) { if (err) { res.send(err); } else { res.send(data); }});	
 }
 
 function getFeedSubscriptionsPerUser(req, res, next) {
