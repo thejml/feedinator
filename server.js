@@ -204,8 +204,9 @@ function findURL(req, res, next) {
 }
 
 function addFeedSubscription(req, res, next) {
-	var options = { upsert: true};
+	var options = {upsert: true};
 	var sub = { feedid: req.params.feedid, uid: req.params.uid };
+	console.log(sub);
 	feedSubs.findOneAndUpdate({uid: req.params.uid, feedid: req.params.feedid}, sub, options, function(err,data) {
 		if (err) { console.log ('Error saving feed subscription '+err); } else { res.send("OK"); }
 	});
@@ -235,7 +236,7 @@ server.get('/current/',currentStories);
 server.get('/short/:uuid',findURL);
 
 server.post('/setfs/',addFeedSubscription);
-server.get('/setfs/',getFeedSubscriptions);
+server.get('/getfs/',getFeedSubscriptions);
 server.get('/getfs/:uid',getFeedSubscriptionsPerUser);
 
 // Here we find an appropriate database to connect to, defaulting to
