@@ -216,7 +216,7 @@ function getFeedSubscriptions(req, res, next) {
 }
 
 function getFeedSubscriptionsPerUser(req, res, next) {
-	feedSubs.find({req.params.uid},null,function (err,data) { if (err) { res.send(err); } else { res.send(data); });	
+	feedSubs.find({uid: req.params.uid},null,function (err,data) { if (err) { res.send(err); } else { res.send(data); });	
 }
 
 var server = restify.createServer();
