@@ -52,12 +52,18 @@ var feedDataSchema = new mongoose.Schema({
 	category: { type: String },
 });
 
+var feedSubscriptionSchema = new mongoose.Schema({
+	uid: { type: Number, min: 0},
+    	feeid: { type: Number, min: 0}
+});
+
 // Get environment currently running under
 var env = "live";
 
 var feeds = mongoose.model('Feeds', feedSchema);
 var history = mongoose.model('History', feedHistorySchema);
 var feedData = mongoose.model('FeedData', feedDataSchema);
+var feedSubs = mongoose.model('FeedSubscriptions', feedSubscriptionSchema);
 
 function respond(req, res, next) {
 	//console.log(req.params);	
@@ -106,8 +112,12 @@ function feedInfo(req, res, next) {
 }
 
 function currentStories(req, res, next) {
-	//Twelve Hours: var lasttwelve=Date.now()-43200000000;
-	//Six Hours: var lasttwelve=Date.now()-21600000000;
+        // > db.feeddatas.find({ timeaggregated: { $gt: 1391456885107000 }}).count();  => 24
+	//Date.now() == 1391369704,609898  1391456086000000-7200000
+	//Twelve Hours: var lasttwelve=Date.now()-43200000;
+	//Six Hours: var lasttwelve=Date.now()-21600000;
+	//      var lasttwelve=Date.now()-7200000;
+	var lasttwelve=(Date.now()-2880000)*1000;
 	feedData.find({ timeaggregated: { $gt: lasttwelve } }, { feedid:1, image:1, category:1, title: 1, uuid:1, pubdateseconds: 1}, { sort: { timeaggregated: -1}},function(err,data) {
 		if (err) { res.send(err); } else { res.send(data) }
 	});
@@ -193,6 +203,21 @@ function findURL(req, res, next) {
 		if (err) { console.log('Error Looking Up uuid: '+req.params.uuid); } else { res.send(data); } });
 }
 
+function addFeedSubscription(req, res, next) {
+	var options = { upsert: true};
+	var sub = { feedid: req.params.feedid, uid: req.params.uid };
+	feedSubs.findOneAndUpdate({uid: req.params.uid, feedid: req.params.feedid}, sub, options, function(err,data) {
+		if (err) { console.log ('Error saving feed subscription '+err); } else { res.send("OK"); }
+	});
+}
+
+function getFeedSubscriptions(req, res, next) {
+	feedSubs.find({},null,function (err,data) { if (err) { res.send(err); } else { res.send(data); });	
+}
+
+function getFeedSubscriptionsPerUser(req, res, next) {
+	feedSubs.find({req.params.uid},null,function (err,data) { if (err) { res.send(err); } else { res.send(data); });	
+}
 
 var server = restify.createServer();
 server.use(restify.bodyParser());
@@ -208,6 +233,10 @@ server.get('/feedlist/',feedList);
 server.get('/feedlatest/:feedid',feedInfo);
 server.get('/current/',currentStories);
 server.get('/short/:uuid',findURL);
+
+server.post('/setfs/',addFeedSubscription);
+server.get('/setfs/',getFeedSubscriptions);
+server.get('/getfs/:uid',getFeedSubscriptionsPerUser);
 
 // Here we find an appropriate database to connect to, defaulting to
 // localhost if we don't find one.
