@@ -268,7 +268,7 @@ server.post('/setfs/',addFeedSubscription);
 server.get('/getfs/',getFeedSubscriptions);
 server.get('/getfs/:uid',getFeedSubscriptionsPerUser);
 
-# This should really have auth around it. Not that it stores passwords.
+// This should really have auth around it. Not that it stores passwords.
 server.post('/setui/:uid',addFeedUser);
 server.get('/getui/:uid',getFeedUser);
 
