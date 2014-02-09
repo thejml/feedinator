@@ -57,6 +57,16 @@ var feedSubscriptionSchema = new mongoose.Schema({
     	feeid: { type: Number, min: 0}
 });
 
+var feedUserSchema = new mongoose.Schema({
+	uid: { type: Number, min: 0},
+	lastLogin: { type: Number, min: 0},
+//	access: { type: Number, min: 0},	//Not sure this is good to have here... security wise. or if it matters.
+	timezone: { type: Number, min: 0},
+	SPP: { type: Number, min: 0},
+	lastDisplay: { type: Number, min: 0},
+	GPS: { type: String},
+});
+
 // Get environment currently running under
 var env = "live";
 
@@ -64,6 +74,7 @@ var feeds = mongoose.model('Feeds', feedSchema);
 var history = mongoose.model('History', feedHistorySchema);
 var feedData = mongoose.model('FeedData', feedDataSchema);
 var feedSubs = mongoose.model('FeedSubscriptions', feedSubscriptionSchema);
+var feedUsers = mongoose.model('FeedUsers', feedUserSchema);
 
 function respond(req, res, next) {
 	//console.log(req.params);	
@@ -158,6 +169,8 @@ function dispatch(req, res, next) {
 	});
 }
 
+//// Feed Story Stuff ////////////////////////////////////////////////////////////////////////////////
+
 function getStoryData(req, res, next) { 
 		feedData.findOne({ uuid: req.params.uuid }, function (err,data) { if (err) { res.send(err); } else { res.send(data); } });
 }
@@ -203,6 +216,7 @@ function findURL(req, res, next) {
 		if (err) { console.log('Error Looking Up uuid: '+req.params.uuid); } else { res.send(data); } });
 }
 
+///// Feed Subscription Stuff ////////////////////////////////////////////////////////////////////////
 function addFeedSubscription(req, res, next) {
 	var options = {upsert: true};
 	var sub = { feedid: req.params.feedid, uid: req.params.uid };
@@ -219,6 +233,21 @@ function getFeedSubscriptions(req, res, next) {
 function getFeedSubscriptionsPerUser(req, res, next) {
 	feedSubs.find({uid: req.params.uid},null,function (err,data) { if (err) { res.send(err); } else { res.send(data); }});	
 }
+
+///// User Info Stuff ////////////////////////////////////////////////////////////////////////////////
+function addFeedUser(req, res, next) {
+	var options = {upsert: true};
+	var user = { uid: req.params.uid, lastLogin: req.params.lastLogin, timezone: req.params.timezone, SPP: req.params.spp, lastDisplay: req.params.ldisplay, GPS: req.params.gps };
+	console.log(user);
+	feedUsers.findOneAndUpdate({uid: req.params.uid }, sub, options, function(err,data) {
+		if (err) { console.log ('Error saving feed subscription '+err); } else { res.send("OK"); }
+	});
+}
+
+function getFeedUser(req, res, next) {
+	feedUsers.find({uid : req.params.uid },null,function (err,data) { if (err) { res.send(err); } else { res.send(data); }});	
+}
+
 
 var server = restify.createServer();
 server.use(restify.bodyParser());
@@ -238,6 +267,10 @@ server.get('/short/:uuid',findURL);
 server.post('/setfs/',addFeedSubscription);
 server.get('/getfs/',getFeedSubscriptions);
 server.get('/getfs/:uid',getFeedSubscriptionsPerUser);
+
+# This should really have auth around it. Not that it stores passwords.
+server.post('/setui/:uid',addFeedUser);
+server.get('/getui/:uid',getFeedUser);
 
 // Here we find an appropriate database to connect to, defaulting to
 // localhost if we don't find one.
