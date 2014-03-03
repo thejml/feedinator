@@ -52,6 +52,9 @@ var feedDataSchema = new mongoose.Schema({
 	category: { type: String },
 });
 
+feedDataSchema.plugin(textSearch);
+feedDataSchema.index({ title: 'text'});
+
 var feedSubscriptionSchema = new mongoose.Schema({
 	uid: { type: Number, min: 0},
     	feeid: { type: Number, min: 0}
@@ -175,6 +178,11 @@ function getStoryData(req, res, next) {
 		feedData.findOne({ uuid: req.params.uuid }, function (err,data) { if (err) { res.send(err); } else { res.send(data); } });
 }
 
+function searchStoryData(req, res, next) {
+	feedData.textSearch(req.params.search,function (err,data) {
+		if (err) { res.send(err); } else { res.send(data); });
+}
+
 function addStoryData(req, res, next) {
 	//console.log(req.params);	
 /*	if (req.params.server === undefined) {
@@ -271,6 +279,9 @@ server.get('/getfs/:uid',getFeedSubscriptionsPerUser);
 // This should really have auth around it. Not that it stores passwords.
 server.post('/setui/:uid',addFeedUser);
 server.get('/getui/:uid',getFeedUser);
+
+// Search
+server.get('/search/:query',searchStories);
 
 // Here we find an appropriate database to connect to, defaulting to
 // localhost if we don't find one.
