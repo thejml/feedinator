@@ -56,7 +56,7 @@ feedDataSchema.plugin(textSearch);
 feedDataSchema.index({ title: 'text'});
 
 var feedSubscriptionSchema = new mongoose.Schema({
-	uid: { type: Number, min: 0},
+	uid: { type: String, min: 0},
     	feeid: { type: Number, min: 0}
 });
 
