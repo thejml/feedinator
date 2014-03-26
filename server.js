@@ -131,7 +131,8 @@ function currentStories(req, res, next) {
 	//Twelve Hours: var lasttwelve=Date.now()-43200000;
 	//Six Hours: var lasttwelve=Date.now()-21600000;
 	//      var lasttwelve=Date.now()-7200000;
-	var lasttwelve=(Date.now()-2880000)*1000;
+//	var lasttwelve=(Date.now()-2880000)*1000;
+	var lasttwelve=(Date.now()-7200000)*1000;
 	feedData.find({ timeaggregated: { $gt: lasttwelve } }, { feedid:1, image:1, category:1, title: 1, uuid:1, pubdateseconds: 1}, { sort: { timeaggregated: -1}},function(err,data) {
 		if (err) { res.send(err); } else { res.send(data) }
 	});
