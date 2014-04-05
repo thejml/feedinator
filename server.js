@@ -51,7 +51,7 @@ var feedDataSchema = new mongoose.Schema({
     	author: { type: String },
 	category: { type: String },
 });
-
+var textSearch = require('mongoose-text-search');
 feedDataSchema.plugin(textSearch);
 feedDataSchema.index({ title: 'text'});
 
@@ -181,7 +181,8 @@ function getStoryData(req, res, next) {
 
 function searchStoryData(req, res, next) {
 	feedData.textSearch(req.params.search,function (err,data) {
-		if (err) { res.send(err); } else { res.send(data); });
+		if (err) { res.send(err); } else { res.send(data); }
+	});
 }
 
 function addStoryData(req, res, next) {
@@ -282,7 +283,7 @@ server.post('/setui/:uid',addFeedUser);
 server.get('/getui/:uid',getFeedUser);
 
 // Search
-server.get('/search/:query',searchStories);
+server.get('/search/:query',searchStoryData);
 
 // Here we find an appropriate database to connect to, defaulting to
 // localhost if we don't find one.
