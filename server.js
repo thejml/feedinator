@@ -222,8 +222,9 @@ function addStoryData(req, res, next) {
 }
 
 function findURL(req, res, next) {
-	feedData.findOne({ uuid: req.params.uuid }, { url: 1}, function (err,data) { 
-		if (err) { console.log('Error Looking Up uuid: '+req.params.uuid); } else { res.send(data); } });
+	feedData.findOneAndUpdate({ uuid: req.params.uuid }, {$inc: hits: 1}, { url: 1 }, function (err,data) {	
+		if (err) { console.log('Error Looking Up uuid: '+req.params.uuid); } else { 
+			res.send(data); } });
 }
 
 ///// Feed Subscription Stuff ////////////////////////////////////////////////////////////////////////
