@@ -1,10 +1,14 @@
 //
 // Deploy/server.js - This is the heart of the server. Most all the work gets done in here.
 //
-var PORT = process.env.OPENSHIFT_NODEJS_PORT || 8080;
+//var PORT = process.env.OPENSHIFT_NODEJS_PORT || 8080;
+var PORT = 8080;
 var IPADDRESS = process.env.OPENSHIFT_NODEJS_IP || '127.0.0.1';
 var MONGOIP = process.env.OPENSHIFT_MONGODB_DB_HOST || '127.0.0.1';
 var MONGOPORT = process.env.OPENSHIFT_MONGODB_DB_PORT || 27017;
+
+// Adding in for New Relic logging
+require('newrelic');
 
 var mongoose = require ("mongoose"); 
 var restify = require ("restify");
@@ -133,7 +137,7 @@ function currentStories(req, res, next) {
 	//      var lasttwelve=Date.now()-7200000;
 //	var lasttwelve=(Date.now()-2880000)*1000;
 	var lasttwelve=(Date.now()-7200000)*1000;
-	feedData.find({ timeaggregated: { $gt: lasttwelve } }, { feedid:1, image:1, category:1, title: 1, uuid:1, pubdateseconds: 1}, { sort: { timeaggregated: -1}},function(err,data) {
+	feedData.find({ timeaggregated: { $gt: lasttwelve } }, { feedid:1, image:1, category:1, title: 1, description:1, uuid:1, pubdateseconds: 1}, { sort: { timeaggregated: -1}},function(err,data) {
 		if (err) { res.send(err); } else { res.send(data) }
 	});
 }
@@ -213,7 +217,7 @@ function addStoryData(req, res, next) {
 			    	lastUpdate: Date.now(),
 				lastSuccess: Date.now(),
 			};
-			res.send(data);
+			//res.send(data);
 			feeds.findOneAndUpdate({ feedid: data.feedid }, updateData, options, function (err) { if (err) { res.send(err); } });
 	
 			res.send('OK');
@@ -222,11 +226,23 @@ function addStoryData(req, res, next) {
 }
 
 function findURL(req, res, next) {
-	feedData.findOneAndUpdate({ uuid: req.params.uuid }, {$inc: hits: 1}, { url: 1 }, function (err,data) {	
+	feedData.findOneAndUpdate({ uuid: req.params.uuid }, {$inc: {hits: 1}}, { url: 1 }, function (err,data) {	
 		if (err) { console.log('Error Looking Up uuid: '+req.params.uuid); } else { 
 			res.send(data); } });
 }
 
+function urldecode(url) {
+        return decodeURIComponent(url.replace(/\+/g, ' '));
+}
+
+function shortener(req, res, next) {
+	feedData.findOne({uuid: req.params.uuid}, {url:1}, function(err,data) {
+		res.writeHead(302, {
+			'Location': urldecode(data.url)
+		});
+		res.end();
+	});
+}
 ///// Feed Subscription Stuff ////////////////////////////////////////////////////////////////////////
 function addFeedSubscription(req, res, next) {
 	var options = {upsert: true};
@@ -274,6 +290,7 @@ server.get('/feedlist/',feedList);
 server.get('/feedlatest/:feedid',feedInfo);
 server.get('/current/',currentStories);
 server.get('/short/:uuid',findURL);
+server.get('/s/:uuid',shortener);
 
 server.post('/setfs/',addFeedSubscription);
 server.get('/getfs/',getFeedSubscriptions);
