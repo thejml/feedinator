@@ -12,6 +12,7 @@ require('newrelic');
 
 var mongoose = require ("mongoose"); 
 var restify = require ("restify");
+var Guid = require ("guid");
 
 // Schemas
 var feedHistorySchema = new mongoose.Schema({
@@ -26,7 +27,7 @@ var feedSchema = new mongoose.Schema({
 	internalID: { type: String },
 	title: { type: String, trim: true },
     	url: { type: String, trim: true },
-    	feedid: { type: Number, min: 0 },
+    	feedid: { type: String },
 	category: { type: Number, min: 0 },
 	type: { type: Number, min: 0 },    
 	image: { type: String, trim: true },    
@@ -112,12 +113,49 @@ function respond(req, res, next) {
 	});
 }
 
+// Only ADD at the moment.
+function addFeedGUID(req, res, next) {
+    res.setHeader("Access-Control-Allow-Origin", "*");
+    console.log(req.params);  
+/*      if (req.params.server === undefined) {
+            return next(new restify.InvalidArgumentError('Server must be supplied'))
+        }*/
+        var options = {upsert: true};
+
+        var guidData = Guid.create();
+        var guid = guidData.value;
+
+        // Not sure if I have all this data or not for this call.
+        var feedData = {
+                title: req.params.title,
+                url: req.params.url,
+                feedid: guid,
+                category: req.params.category,
+                type: req.params.type,    
+                image: req.params.image,    
+                timeOffset: req.params.timeOffset,    
+                who: req.params.who,    
+                personal: req.params.personal,    
+                dateAdded: req.params.dateAdded,    
+        };
+   console.log(feedData);  
+
+        // Saving it to the database.
+        feeds.findOneAndUpdate({ feedid: req.params.feedid, url: req.params.url }, feedData, options, function (err) {
+                if (err) {console.log ('Error on save for '+req.params+" Error: "+err)} else {
+                        res.send('OK');
+                }
+        });
+}
+
+
 function findoldest(server) {
 	return deployment.aggregate({key: {"lastUpdate":-1},reduce: function (curr,result) {result.total++; if(curr.datestamp<result.datestamp) { result.datestamp=curr.datestamp;} }, initial: {datestamp: Date.now()} });
 }
 
 function feedList(req, res, next) {
-	feeds.find({},{feedid: 1, title: 1},function(err,data) {
+    res.setHeader("Access-Control-Allow-Origin", "*");
+    feeds.find({},{feedid: 1, title: 1},function(err,data) {
 		if (err) { res.send(err); } else { res.send(data); } 
 	});
 }
@@ -236,7 +274,8 @@ function urldecode(url) {
 }
 
 function shortener(req, res, next) {
-	feedData.findOne({uuid: req.params.uuid}, {url:1}, function(err,data) {
+    res.setHeader("Access-Control-Allow-Origin", "*");
+    feedData.findOne({uuid: req.params.uuid}, {url:1}, function(err,data) {
 		res.writeHead(302, {
 			'Location': urldecode(data.url)
 		});
@@ -282,6 +321,7 @@ server.get('/hello/:name',function(req, res, next) { res.send("Hey, "+req.params
 
 server.post('/feed/:feedid',respond);
 server.get('/feed/:feedid',feedInfo);
+server.post('/addfeed/',addFeedGUID);
 server.post('/story/:uuid',addStoryData);
 server.get('/story/:uuid',getStoryData);
 server.get('/dispatch/:server',dispatch);
